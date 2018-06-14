@@ -8,5 +8,5 @@ docker build -t app -f Dockerfile . && docker build -t app-test -f Dockerfile.te
 
 # Build app with docker and export to dist folder (in root folder)
 
-rm -rf dist && docker build -t app -f Dockerfile . && docker cp $(docker ps -l -q):/dist dist
+rm -rf dist && docker build -t app -f Dockerfile . && docker run -d app && docker cp $(docker ps -l -q):/dist ./dist && docker stop $(docker ps -l -q)
 

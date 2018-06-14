@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: "Pipeline for building application from master branch in GitHub repository and storing resulting deployment package in S3 as a zip. No deployment package will be built if test stages in pipeline fail."
+Description: "Pipeline for building application in GitHub repository and storing resulting deployment package in S3 as a zip. No deployment package will be built if test stages in pipeline fail. All stages use docker and docker-compose for testing and building. Even though build is done with docker, the build files can be exported from docker."
 Parameters:
   GitHubOwner:
     Type: String
@@ -7,15 +7,14 @@ Parameters:
     Description: GitHub repository owner
   GitHubRepo:
     Type: String
-    Default: node-skeleton
     Description: GitHub repository name
   GitHubBranch:
     Type: String
     Default: master
-    Description: GitHub repository branch
+    Description: GitHub repository branch to test and build from
   GitHubToken:
     Type: String
-    Description: GitHub repository OAuth token
+    Description: GitHub personal access token
   UnitTestCommand:
     Type: String
     Description: "Command to run unit tests with docker or docker-compose (\"command || true\" if there are none)"
@@ -27,7 +26,7 @@ Parameters:
   BuildCommand:
     Type: String
     Description: Command that creates build into dist folder with docker. If you use the default command, the Dockerfile must create "dist" directory with the build in it. The command will then export the dist directory from the docker image.
-    Default: rm -rf dist && docker build -t app -f Dockerfile . && docker cp $(docker ps -l -q):/dist dist
+    Default: rm -rf dist && docker build -t app -f Dockerfile . && docker run -d app && docker cp $(docker ps -l -q):/dist ./dist && docker stop $(docker ps -l -q)
 Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
@@ -132,21 +131,17 @@ Resources:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
-        Type: S3
-        Location: !Ref ArtifactBucket
-        Path: !Ref BuildArtifact
-        NamespaceType: BUILD_ID
-        Packaging: ZIP
+        Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: |
+        BuildSpec: !Sub |
           version: 0.2
           phases:
             build:
               commands:
                 - ${BuildCommand}
           artifacts:
-            files: dist/*
+            files: dist/**/*
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
@@ -221,7 +216,5 @@ Resources:
 Outputs:
   BucketArn:
     Value: !GetAtt ArtifactBucket.Arn
-  BucketUri:
-    Value: !GetAtt ArtifactBucket.WebsiteUrl
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
