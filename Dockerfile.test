@@ -1,0 +1,13 @@
+FROM app
+
+# Copy test files
+COPY test /dist/test
+
+# Override the NODE_ENV environment variable to 'dev', in order to get required test packages
+ENV NODE_ENV dev
+
+# Get test packages
+RUN npm update
+
+# Run unit tests
+CMD ["npm", "test"]

@@ -1,0 +1,22 @@
+{
+  "name": "skeleton-node",
+  "version": "1.0.0",
+  "description": "Starting template for node project",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha test/unit --recursive",
+    "start": "node src/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "uuid": "^3.2.1",
+    "winston": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0",
+    "sinon": "^6.0.0"
+  }
+}
